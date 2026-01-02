@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  flask-video-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flask-video-streaming
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    tmpfs:
+      # Mount tmpfs for video storage (ephemeral, in-memory storage)
+      - /app/static/videos:size=2G,mode=1777
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - flask-network
+
+networks:
+  flask-network:
+    driver: bridge

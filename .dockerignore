@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation (include in image if needed)
+# README.md
+# API_DOCUMENTATION.md
+# TESTING_GUIDE.md
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Local development files
+*.log
+.env
+.env.local
+
+# Videos - don't include in image, will use tmpfs
+static/videos/*
+!static/videos/.gitkeep
+
+# Google Drive metadata
+.gdrive_meta_*.json
+
+# Setup scripts
+setup_structure.py
+MIGRATION_GUIDE.md
+PUSH_TO_GITHUB.md
+TROUBLESHOOTING.md

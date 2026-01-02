@@ -23,6 +23,8 @@ A Python Flask server that uses Jinja2 templates to display and stream videos us
 
 ## Installation
 
+### Option 1: Local Development
+
 1. Clone this repository:
 ```bash
 git clone https://github.com/gauravphadke/aks-experiment-1.git
@@ -51,6 +53,34 @@ pip install -r requirements.txt
 4. Add your video files:
    - Place your video files (.mp4, .webm, or .ogg) in the `static/videos` directory
    - The directory is created automatically when you run the application
+
+### Option 2: Docker Deployment (Recommended for Production)
+
+**Prerequisites:** Docker and Docker Compose installed
+
+**Quick Start:**
+```bash
+# Using Docker Compose (recommended)
+docker compose up --build
+
+# Or using the helper script
+./docker-start.sh start        # Linux/Mac
+docker-start.bat start          # Windows
+```
+
+**Benefits of Docker deployment:**
+- ✅ Ultra-fast video loading (tmpfs stores videos in RAM)
+- ✅ No disk wear on SSDs
+- ✅ Automatic cleanup (videos cleared on restart)
+- ✅ Production-ready with Gunicorn
+- ✅ Easy deployment and scaling
+
+**Access the application:**
+```
+http://localhost:5000
+```
+
+**For detailed Docker instructions, see [DOCKER_GUIDE.md](DOCKER_GUIDE.md)**
 
 ## Usage
 
@@ -119,10 +149,16 @@ flask-video-app/
 ├── requirements.txt          # Python dependencies
 ├── README.md                 # This file
 ├── API_DOCUMENTATION.md      # Detailed API documentation
+├── DOCKER_GUIDE.md           # Comprehensive Docker deployment guide
+├── Dockerfile                # Docker image definition
+├── docker-compose.yml        # Docker Compose configuration
+├── .dockerignore             # Docker build exclusions
+├── docker-start.sh           # Docker helper script (Linux/Mac)
+├── docker-start.bat          # Docker helper script (Windows)
 ├── templates/
 │   └── index.html           # Jinja2 template with video player and Google Drive UI
 └── static/
-    └── videos/              # Directory for video files (cached downloads)
+    └── videos/              # Directory for video files (tmpfs in Docker)
 ```
 
 ## How It Works
@@ -215,23 +251,44 @@ pip install gunicorn
 gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ```
 
-### Docker
-Create a `Dockerfile`:
-```dockerfile
-FROM python:3.9-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 5000
-CMD ["python", "app.py"]
+### Docker (Recommended)
+
+**Quick Start:**
+```bash
+# Build and run with Docker Compose
+docker compose up --build -d
+
+# Or use helper scripts
+./docker-start.sh start        # Linux/Mac
+docker-start.bat start          # Windows
 ```
 
-Build and run:
+**Features:**
+- Production-ready with Gunicorn (4 workers)
+- Videos stored in tmpfs (RAM) for ultra-fast access
+- Automatic restart on failure
+- Health checks enabled
+- 2GB tmpfs storage (configurable)
+
+**Useful Commands:**
 ```bash
-docker build -t flask-video-app .
-docker run -p 5000:5000 flask-video-app
+# View logs
+docker logs -f flask-video-streaming
+
+# Check tmpfs usage
+docker exec flask-video-streaming df -h /app/static/videos
+
+# Stop container
+docker compose down
+
+# Restart (clears tmpfs)
+docker compose restart
 ```
+
+**For complete Docker documentation, see [DOCKER_GUIDE.md](DOCKER_GUIDE.md)**
+
+### Kubernetes
+Coming soon! The Docker image can be deployed to Kubernetes/AKS.
 
 ## Troubleshooting
 
