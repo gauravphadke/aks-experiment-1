@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Streaming Server</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .video-container {
+            padding: 40px;
+            background: #f8f9fa;
+        }
+
+        .video-wrapper {
+            position: relative;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            max-height: 600px;
+        }
+
+        .video-info {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .video-info h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .video-list {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .video-list h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .video-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .video-item:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .video-item.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .no-videos {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .no-videos h3 {
+            margin-bottom: 10px;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px;
+        }
+
+        .instructions h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .instructions p {
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .controls-info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .gdrive-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 2px solid #4285f4;
+        }
+
+        .gdrive-section h3 {
+            color: #4285f4;
+            margin-bottom: 10px;
+        }
+
+        .gdrive-section > p {
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        .gdrive-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .gdrive-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .gdrive-input:focus {
+            outline: none;
+            border-color: #4285f4;
+        }
+
+        .gdrive-button {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .gdrive-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.3);
+        }
+
+        .gdrive-button:active {
+            transform: translateY(0);
+        }
+
+        .gdrive-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .download-status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .download-status.show {
+            display: block;
+        }
+
+        .download-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .download-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .download-status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .gdrive-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #6c757d;
+            line-height: 1.6;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #0c5460;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .video-container {
+                padding: 20px;
+            }
+
+            .gdrive-input-group {
+                flex-direction: column;
+            }
+
+            .gdrive-button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Flask Video Streaming Server</h1>
+            <p>HTML5 Video Player with Jinja2 Templates</p>
+        </div>
+
+        {% if videos %}
+        <div class="video-container">
+            <div class="video-info">
+                <h2>Now Playing</h2>
+                <p id="current-video-name">{{ videos[0] }}</p>
+            </div>
+
+            <div class="video-wrapper">
+                <video id="videoPlayer" controls autoplay>
+                    <source src="{{ url_for('video', filename=videos[0]) }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            <div class="controls-info">
+                <strong>Player Controls:</strong> Use the built-in HTML5 video controls to play, pause, adjust volume, 
+                seek through the video, and toggle fullscreen mode.
+            </div>
+
+            {% if videos|length > 1 %}
+            <div class="video-list">
+                <h3>Available Videos ({{ videos|length }})</h3>
+                {% for video in videos %}
+                <div class="video-item {% if loop.first %}active{% endif %}" 
+                     onclick="playVideo('{{ video }}', this)">
+                    📹 {{ video }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Google Drive Download Section -->
+            <div class="gdrive-section">
+                <h3>📥 Download from Google Drive</h3>
+                <p>Paste a shareable Google Drive link to cache and play videos</p>
+                
+                <div class="gdrive-input-group">
+                    <input type="text" 
+                           id="gdriveUrl" 
+                           placeholder="https://drive.google.com/file/d/FILE_ID/view..."
+                           class="gdrive-input">
+                    <button onclick="downloadFromGDrive()" class="gdrive-button">
+                        Download Video
+                    </button>
+                </div>
+                
+                <div id="downloadStatus" class="download-status"></div>
+                
+                <div class="gdrive-info">
+                    <strong>Supported formats:</strong> MP4, WebM, Ogg, MOV, AVI, MKV<br>
+                    <strong>Note:</strong> Make sure the file has link sharing enabled (Anyone with the link can view)
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="video-container">
+            <div class="no-videos">
+                <h3>No Videos Available</h3>
+                <p>Add videos by uploading files or downloading from Google Drive</p>
+            </div>
+            
+            <!-- Google Drive Download Section -->
+            <div class="gdrive-section">
+                <h3>📥 Download from Google Drive</h3>
+                <p>Paste a shareable Google Drive link to cache and play videos</p>
+                
+                <div class="gdrive-input-group">
+                    <input type="text" 
+                           id="gdriveUrl" 
+                           placeholder="https://drive.google.com/file/d/FILE_ID/view..."
+                           class="gdrive-input">
+                    <button onclick="downloadFromGDrive()" class="gdrive-button">
+                        Download Video
+                    </button>
+                </div>
+                
+                <div id="downloadStatus" class="download-status"></div>
+                
+                <div class="gdrive-info">
+                    <strong>Supported formats:</strong> MP4, WebM, Ogg, MOV, AVI, MKV<br>
+                    <strong>Note:</strong> Make sure the file has link sharing enabled (Anyone with the link can view)
+                </div>
+            </div>
+
+            <div class="instructions">
+                <h3>📝 Instructions:</h3>
+                <p>
+                    <strong>Option 1: Manual Upload</strong><br>
+                    1. Create a <strong>static/videos</strong> directory in your project root<br>
+                    2. Add your video files (.mp4, .webm, or .ogg)<br>
+                    3. Refresh this page to see your videos<br><br>
+                    
+                    <strong>Option 2: Google Drive Download</strong><br>
+                    1. Get a shareable link from Google Drive<br>
+                    2. Paste it in the form above<br>
+                    3. Click "Download Video" to cache it locally<br>
+                    4. The video will appear in your playlist automatically
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const videoPlayer = document.getElementById('videoPlayer');
+        const currentVideoName = document.getElementById('current-video-name');
+
+        function playVideo(filename, element) {
+            // Update video source
+            videoPlayer.src = `/video/${filename}`;
+            videoPlayer.load();
+            videoPlayer.play();
+
+            // Update current video name
+            if (currentVideoName) {
+                currentVideoName.textContent = filename;
+            }
+
+            // Update active state
+            document.querySelectorAll('.video-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            element.classList.add('active');
+        }
+
+        // Optional: Auto-play next video when current ends
+        if (videoPlayer) {
+            videoPlayer.addEventListener('ended', function() {
+                const items = document.querySelectorAll('.video-item');
+                const activeIndex = Array.from(items).findIndex(item => 
+                    item.classList.contains('active')
+                );
+                
+                if (activeIndex < items.length - 1) {
+                    items[activeIndex + 1].click();
+                }
+            });
+
+            // Error handling
+            videoPlayer.addEventListener('error', function(e) {
+                console.error('Video error:', e);
+                alert('Error loading video. Please check if the file exists and is a valid video format.');
+            });
+        }
+
+        // Google Drive download functionality
+        async function downloadFromGDrive() {
+            const urlInput = document.getElementById('gdriveUrl');
+            const statusDiv = document.getElementById('downloadStatus');
+            const downloadButton = document.querySelector('.gdrive-button');
+            
+            const url = urlInput.value.trim();
+            
+            // Validate URL
+            if (!url) {
+                showStatus('error', 'Please enter a Google Drive URL');
+                return;
+            }
+            
+            if (!url.includes('drive.google.com')) {
+                showStatus('error', 'Please enter a valid Google Drive URL');
+                return;
+            }
+            
+            // Disable button and show loading
+            downloadButton.disabled = true;
+            showStatus('loading', '<span class="spinner"></span> Downloading video from Google Drive...');
+            
+            try {
+                const response = await fetch('/api/download-gdrive', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.cached) {
+                        showStatus('success', `✓ ${data.message} - File: ${data.filename}`);
+                    } else {
+                        showStatus('success', `✓ ${data.message} - File: ${data.filename} (${data.size_mb} MB)`);
+                    }
+                    
+                    // Clear input
+                    urlInput.value = '';
+                    
+                    // Reload page after 2 seconds to show new video
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    // Handle error response
+                    let errorMessage = data.message || 'Download failed';
+                    if (data.hint) {
+                        errorMessage += '. ' + data.hint;
+                    }
+                    if (data.detected_type) {
+                        errorMessage += ` (Detected type: ${data.detected_type})`;
+                    }
+                    showStatus('error', '✗ ' + errorMessage);
+                }
+            } catch (error) {
+                showStatus('error', '✗ Network error: ' + error.message);
+            } finally {
+                downloadButton.disabled = false;
+            }
+        }
+        
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('downloadStatus');
+            statusDiv.className = `download-status show ${type}`;
+            statusDiv.innerHTML = message;
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.classList.remove('show');
+                }, 5000);
+            }
+        }
+        
+        // Allow Enter key to submit
+        const gdriveInput = document.getElementById('gdriveUrl');
+        if (gdriveInput) {
+            gdriveInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    downloadFromGDrive();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
