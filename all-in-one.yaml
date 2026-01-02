@@ -1,0 +1,168 @@
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flask-video-streaming
+  labels:
+    name: flask-video-streaming
+    environment: production
+
+---
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flask-video-streaming-config
+  namespace: flask-video-streaming
+  labels:
+    app: flask-video-streaming
+data:
+  FLASK_ENV: "production"
+  PYTHONUNBUFFERED: "1"
+  GUNICORN_WORKERS: "4"
+  GUNICORN_TIMEOUT: "300"
+  MAX_CONTENT_LENGTH: "524288000"
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-video-streaming
+  namespace: flask-video-streaming
+  labels:
+    app: flask-video-streaming
+    version: v1
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: flask-video-streaming
+  template:
+    metadata:
+      labels:
+        app: flask-video-streaming
+        version: v1
+    spec:
+      containers:
+      - name: flask-video-streaming
+        image: flask-video-app:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: flask-video-streaming-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "3Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: video-storage
+          mountPath: /app/static/videos
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+      volumes:
+      - name: video-storage
+        emptyDir:
+          medium: Memory
+          sizeLimit: 2Gi
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+---
+# Service (LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-video-streaming
+  namespace: flask-video-streaming
+  labels:
+    app: flask-video-streaming
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+spec:
+  type: LoadBalancer
+  selector:
+    app: flask-video-streaming
+  ports:
+  - name: http
+    port: 80
+    targetPort: 5000
+    protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+
+---
+# HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: flask-video-streaming-hpa
+  namespace: flask-video-streaming
+  labels:
+    app: flask-video-streaming
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: flask-video-streaming
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+# PodDisruptionBudget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: flask-video-streaming-pdb
+  namespace: flask-video-streaming
+  labels:
+    app: flask-video-streaming
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: flask-video-streaming

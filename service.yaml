@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-video-streaming
+  labels:
+    app: flask-video-streaming
+  annotations:
+    # Azure Load Balancer annotations (remove if not using Azure)
+    service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+    # Uncomment for internal load balancer in Azure
+    # service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    # service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "subnet-name"
+spec:
+  type: LoadBalancer
+  selector:
+    app: flask-video-streaming
+  ports:
+  - name: http
+    port: 80
+    targetPort: 5000
+    protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800

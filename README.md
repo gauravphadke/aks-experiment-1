@@ -150,15 +150,29 @@ flask-video-app/
 ├── README.md                 # This file
 ├── API_DOCUMENTATION.md      # Detailed API documentation
 ├── DOCKER_GUIDE.md           # Comprehensive Docker deployment guide
+├── KUBERNETES_GUIDE.md       # Comprehensive Kubernetes deployment guide
 ├── Dockerfile                # Docker image definition
 ├── docker-compose.yml        # Docker Compose configuration
 ├── .dockerignore             # Docker build exclusions
 ├── docker-start.sh           # Docker helper script (Linux/Mac)
 ├── docker-start.bat          # Docker helper script (Windows)
+├── k8s-deploy.sh             # Kubernetes deployment script (Linux/Mac)
+├── k8s-deploy.ps1            # Kubernetes deployment script (Windows)
 ├── templates/
 │   └── index.html           # Jinja2 template with video player and Google Drive UI
-└── static/
-    └── videos/              # Directory for video files (tmpfs in Docker)
+├── static/
+│   └── videos/              # Directory for video files (tmpfs in Docker/K8s)
+└── k8s/                     # Kubernetes manifests
+    ├── namespace.yaml       # Namespace definition
+    ├── configmap.yaml       # Configuration
+    ├── deployment.yaml      # Deployment with 3 replicas
+    ├── service.yaml         # LoadBalancer service
+    ├── hpa.yaml             # Horizontal Pod Autoscaler
+    ├── pdb.yaml             # Pod Disruption Budget
+    ├── resourcequota.yaml   # Resource limits
+    ├── ingress.yaml         # Ingress (optional)
+    ├── all-in-one.yaml      # All resources in one file
+    └── kustomization.yaml   # Kustomize configuration
 ```
 
 ## How It Works
@@ -251,7 +265,7 @@ pip install gunicorn
 gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ```
 
-### Docker (Recommended)
+### Docker (Recommended for Single Server)
 
 **Quick Start:**
 ```bash
@@ -270,25 +284,53 @@ docker-start.bat start          # Windows
 - Health checks enabled
 - 2GB tmpfs storage (configurable)
 
-**Useful Commands:**
-```bash
-# View logs
-docker logs -f flask-video-streaming
-
-# Check tmpfs usage
-docker exec flask-video-streaming df -h /app/static/videos
-
-# Stop container
-docker compose down
-
-# Restart (clears tmpfs)
-docker compose restart
-```
-
 **For complete Docker documentation, see [DOCKER_GUIDE.md](DOCKER_GUIDE.md)**
 
-### Kubernetes
-Coming soon! The Docker image can be deployed to Kubernetes/AKS.
+### Kubernetes (Recommended for Production/Scale)
+
+**Quick Start:**
+```bash
+# Build image
+docker build -t flask-video-app:latest .
+
+# Deploy to Kubernetes
+kubectl apply -f k8s/all-in-one.yaml
+
+# Or use deployment script
+chmod +x k8s-deploy.sh
+./k8s-deploy.sh full
+```
+
+**Features:**
+- LoadBalancer service for external access
+- Horizontal Pod Autoscaling (3-10 replicas)
+- High availability with Pod Disruption Budget
+- Health checks and rolling updates
+- Memory-backed storage (emptyDir with Memory medium)
+- Session affinity for consistent user experience
+
+**Get LoadBalancer IP:**
+```bash
+kubectl get service flask-video-streaming -n flask-video-streaming
+```
+
+**Access application:**
+```
+http://<EXTERNAL-IP>
+```
+
+**For complete Kubernetes documentation, see [KUBERNETES_GUIDE.md](KUBERNETES_GUIDE.md)**
+
+### Cloud Providers
+
+**Azure Kubernetes Service (AKS):**
+- See [KUBERNETES_GUIDE.md](KUBERNETES_GUIDE.md#azure-kubernetes-service-aks) for AKS-specific setup
+- Includes Azure Container Registry (ACR) integration
+- Internal/External load balancer options
+
+**Amazon EKS / Google GKE:**
+- Full deployment instructions in [KUBERNETES_GUIDE.md](KUBERNETES_GUIDE.md)
+- Container registry integration (ECR, GCR)
 
 ## Troubleshooting
 

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flask-video-streaming
+  labels:
+    name: flask-video-streaming
+    environment: production
