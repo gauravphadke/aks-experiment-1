@@ -1,0 +1,72 @@
+# Example Terraform Variables Configuration
+# Copy this file to terraform.tfvars and customize for your environment
+
+# Basic Configuration
+resource_group_name = "flask-video-streaming-rg"
+location            = "East US"  # Change to your preferred region
+cluster_name        = "flask-video-aks"
+dns_prefix          = "flask-video"
+environment         = "production"
+
+# Kubernetes Version
+kubernetes_version = "1.28.3"  # Check available versions: az aks get-versions --location eastus
+
+# Network Configuration
+vnet_address_space     = "10.0.0.0/16"
+subnet_address_prefix  = "10.0.1.0/24"
+network_plugin         = "azure"
+network_policy         = "azure"
+service_cidr           = "10.1.0.0/16"
+dns_service_ip         = "10.1.0.10"
+
+# System Node Pool (Minimum 3 nodes required)
+system_node_count      = 3
+system_node_vm_size    = "Standard_D2s_v3"
+system_node_os_disk_size = 128
+system_node_min_count  = 3
+system_node_max_count  = 6
+
+# User Node Pool (Application workloads)
+user_node_count        = 3
+user_node_vm_size      = "Standard_D4s_v3"
+user_node_os_disk_size = 128
+user_node_min_count    = 3
+user_node_max_count    = 10
+
+# Auto-Scaling
+enable_auto_scaling = true
+max_pods_per_node   = 110
+
+# Azure AD Integration
+enable_azure_ad_integration = true
+enable_azure_rbac           = true
+# Add your Azure AD admin group object IDs here
+# admin_group_object_ids = ["00000000-0000-0000-0000-000000000000"]
+
+# Monitoring
+enable_log_analytics         = true
+log_analytics_retention_days = 30
+
+# Container Registry
+create_acr = true
+acr_sku    = "Standard"
+
+# Additional Features
+enable_http_application_routing = false
+enable_azure_policy             = false
+
+# Maintenance Window (optional)
+# Uncomment and configure if you want a specific maintenance window
+# maintenance_window = {
+#   day   = "Sunday"
+#   hours = [0, 1, 2, 3]
+# }
+
+# Tags
+tags = {
+  Application = "Flask-Video-Streaming"
+  Project     = "Video-Platform"
+  Environment = "Production"
+  ManagedBy   = "Terraform"
+  CostCenter  = "Engineering"
+}
